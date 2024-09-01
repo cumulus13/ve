@@ -10,7 +10,7 @@ Python Virtual Environment Wrapper made simple (Windows Only)
 ve.bat install
 
 ```
-this will create 'C:\VENV' directory then activate immediately 
+this will create 'C:\VENV' directory
 
 ## Example
 
@@ -18,7 +18,8 @@ this will create 'C:\VENV' directory then activate immediately
 ```bash
 ve test
 ```
-  this will create new virtual environment in 'c:\VENV' to be 'c:\VENV\test-env'
+  this will create new virtual environment in 'c:\VENV' to be 'c:\VENV\test-env' then activate immediately 
+  
 - list virtual environment created
 ```bash
 ve -l
