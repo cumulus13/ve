@@ -1,11 +1,10 @@
 @echo off
 rem author Hadi Cahyadi <cumulus13@gmail.com>
+rem for python 2
 
 if "%1"=="" goto usage
 if "%1"=="uninstall" goto remove
 if "%1"=="remove" goto remove
-if "%1"=="d" goto deactivate
-if "%1"=="de" goto deactivate
 if "%1"=="deactive" goto deactivate
 if "%1"=="deactivate" goto deactivate
 if "%1"=="de" goto deactivate
@@ -17,10 +16,6 @@ if "%1"=="-i" goto install
 if "%1"=="i" goto install
 
 set NAME=%1
-set PY=%2
-if defined PY (
-    set PY=%PY:"=%
-)
 if not exist c:\VENV (
     mkdir c:\VENV
 )
@@ -35,12 +30,7 @@ if exist %DIR% (
 ) else (
     rem echo create "%NAME%" ...
     echo ^[93mcreate "%NAME%" ...^[0m
-    if "%PY%"=="" (
-        virtualenv %DIR%
-    ) else (
-        echo PY = %PY%
-        %PY% -m virtualenv %DIR%
-    )
+    c:\sdk\Anaconda2\Scripts\virtualenv.exe %DIR%
     
     call %DIR%\Scripts\activate.bat
 )
@@ -85,7 +75,7 @@ goto end
 echo.
 echo ^[93mPython Virtual Environment^[0m
 echo.
-echo ^[93musage:^[0m %0 ^[91m[remove/uninstall/deactivate/d/de/-l/l/list]^[0m ^[96m[NAME]^[0m
+echo ^[93musage:^[0m %0 ^[91m[remove/uninstall/deactivate/-l/l/list]^[0m ^[96m[NAME]^[0m
 goto end
 
 :end
