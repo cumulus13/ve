@@ -1,5 +1,7 @@
 @echo off
-rem author Hadi Cahyadi <cumulus13@gmail.com>
+@rem author Hadi Cahyadi <cumulus13@gmail.com>
+
+set LAST_DIR=%CD%
 
 if "%1"=="" goto usage
 if "%1"=="uninstall" goto remove
@@ -15,6 +17,7 @@ if "%1"=="list" goto list
 if "%1"=="install" goto install
 if "%1"=="-i" goto install
 if "%1"=="i" goto install
+if "%1"=="base" goto base
 
 set NAME=%1
 set PY=%2
@@ -85,7 +88,15 @@ goto end
 echo.
 echo ^[93mPython Virtual Environment^[0m
 echo.
-echo ^[93musage:^[0m %0 ^[91m[remove/uninstall/deactivate/d/de/-l/l/list]^[0m ^[96m[NAME]^[0m
+echo ^[93musage:^[0m %0 ^[91m[remove/uninstall/deactivate/d/de/-l/l/list]^[0m ^[96m[NAME]^[0m ^[95m[PYTHON]^[0m
+goto end
+
+:base
+set LAST_DIR=%CD%
+cd /d %VIRTUAL_ENV%
 goto end
 
 :end
+if defined %LAST_DIR% (
+    cd /d %LAST_DIR%
+)
