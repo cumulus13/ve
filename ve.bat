@@ -2,7 +2,6 @@
 @rem author Hadi Cahyadi <cumulus13@gmail.com>
 
 set LAST_DIR=%CD%
-
 if "%1"=="" goto usage
 if "%1"=="uninstall" goto remove
 if "%1"=="remove" goto remove
@@ -19,6 +18,7 @@ if "%1"=="-i" goto install
 if "%1"=="i" goto install
 if "%1"=="base" goto base
 
+set PATH_ORI=%PATH%
 set NAME=%1
 set PY=%2
 if defined PY (
@@ -30,10 +30,8 @@ if not exist c:\VENV (
 set DIR=c:\VENV\%NAME%-env
 
 if exist %DIR% (
-    rem echo active "%NAME%" ...
     echo ^[96mactive "%NAME%" ...^[0m
-    
-    call "%DIR%\Scripts\activate.bat"
+    "%DIR%\Scripts\activate.bat"
     
 ) else (
     rem echo create "%NAME%" ...
@@ -45,7 +43,7 @@ if exist %DIR% (
         %PY% -m virtualenv %DIR%
     )
     
-    call %DIR%\Scripts\activate.bat
+    %DIR%\Scripts\activate.bat
 )
 goto end
 
@@ -56,7 +54,7 @@ if not exist c:\VENV (
 goto end
 
 :deactivate
-call %DIR%\Scripts\deactivate.bat
+%DIR%\Scripts\deactivate.bat
 goto end
 
 :remove
@@ -68,7 +66,7 @@ if exist %DIR% (
     rem echo deactive "%NAME%" ...
     echo ^[93mdeactive "%NAME%" ...^[0m
     
-    call %DIR%\Scripts\deactivate.bat
+    %DIR%\Scripts\deactivate.bat
     
     rmdir /s /q %DIR%
 )
@@ -92,11 +90,10 @@ echo ^[93musage:^[0m %0 ^[91m[remove/uninstall/deactivate/d/de/-l/l/list]^[0
 goto end
 
 :base
-set LAST_DIR=%CD%
 cd /d %VIRTUAL_ENV%
 goto end
 
 :end
-if defined %LAST_DIR% (
-    cd /d %LAST_DIR%
-)
+set PATH=%PATH_ORI%
+
+cd /d %LAST_DIR%
