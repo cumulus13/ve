@@ -1,7 +1,11 @@
 @echo off
 @rem author Hadi Cahyadi <cumulus13@gmail.com>
 
+set PATH_ORI=%PATH%
+set NAME=%1
+set PY=%2
 set LAST_DIR=%CD%
+
 if "%1"=="" goto usage
 if "%1"=="uninstall" goto remove
 if "%1"=="remove" goto remove
@@ -18,9 +22,6 @@ if "%1"=="-i" goto install
 if "%1"=="i" goto install
 if "%1"=="base" goto base
 
-set PATH_ORI=%PATH%
-set NAME=%1
-set PY=%2
 if defined PY (
     set PY=%PY:"=%
 )
