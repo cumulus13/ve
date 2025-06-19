@@ -58,8 +58,8 @@ usage() {
 create_venv_dir() {
     if [ ! -d "$VENV_DIR" ]; then
         echo -e "${YELLOW}${ICON_CREATE} Creating VENV directory...${RESET}"
-        sudo mkdir -p "$VENV_DIR"
-        sudo chmod 755 "$VENV_DIR"
+        mkdir -p "$VENV_DIR"
+        chmod 755 "$VENV_DIR"
     fi
 }
 
