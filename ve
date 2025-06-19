@@ -1,0 +1,268 @@
+#!/bin/bash
+# author Hadi Cahyadi <cumulus13@gmail.com>
+# 
+# Usage as function (recommended - for auto-activation):
+# Add this to your ~/.bashrc or ~/.zshrc:
+# source /path/to/this/script
+# Then use: venv myproject
+#
+# Usage as script:
+# ./ve.sh myproject
+
+# Colors
+RED='\033[91m'
+GREEN='\033[92m'
+YELLOW='\033[93m'
+BLUE='\033[94m'
+MAGENTA='\033[95m'
+CYAN='\033[96m'
+WHITE='\033[97m'
+RESET='\033[0m'
+
+# Icons
+ICON_CREATE="🔧"
+ICON_ACTIVATE="✅"
+ICON_REMOVE="🗑️"
+ICON_DEACTIVATE="⏹️"
+ICON_LIST="📋"
+ICON_PYTHON="🐍"
+ICON_ERROR="❌"
+ICON_SUCCESS="✨"
+
+# Save original values
+PATH_ORI="$PATH"
+LAST_DIR="$(pwd)"
+
+# Variables
+NAME="$1"
+PY="$2"
+VENV_DIR="/opt/VENV"
+
+# Functions
+usage() {
+    echo
+    echo -e "${YELLOW}${ICON_PYTHON} Python Virtual Environment${RESET}"
+    echo
+    echo -e "${YELLOW}usage:${RESET} $0 ${RED}[remove/uninstall/deactivate/d/de/-l/l/list]${RESET} ${CYAN}[NAME]${RESET} ${MAGENTA}[PYTHON]${RESET}"
+    echo
+    echo -e "${CYAN}Commands:${RESET}"
+    echo -e "  ${GREEN}${NAME}${RESET}                    - Create/activate virtual environment"
+    echo -e "  ${RED}remove/uninstall${RESET}      - Remove virtual environment"
+    echo -e "  ${RED}deactivate/d/de${RESET}       - Deactivate current environment"
+    echo -e "  ${BLUE}list/l/-l${RESET}             - List all environments"
+    echo -e "  ${YELLOW}install/i/-i${RESET}          - Install/create VENV directory"
+    echo -e "  ${MAGENTA}base${RESET}                  - Go to virtual environment base directory"
+    echo
+}
+
+create_venv_dir() {
+    if [ ! -d "$VENV_DIR" ]; then
+        echo -e "${YELLOW}${ICON_CREATE} Creating VENV directory...${RESET}"
+        sudo mkdir -p "$VENV_DIR"
+        sudo chmod 755 "$VENV_DIR"
+    fi
+}
+
+activate_or_create() {
+    local env_name="$1"
+    local python_cmd="$2"
+    local env_path="$VENV_DIR/${env_name}-env"
+    
+    create_venv_dir
+    
+    if [ -d "$env_path" ]; then
+        echo -e "${CYAN}${ICON_ACTIVATE} Activating \"$env_name\"...${RESET}"
+        if [[ "${BASH_SOURCE[0]}" != "${0}" ]] || [[ -n "$ZSH_VERSION" ]]; then
+            # Script is being sourced, can activate directly
+            source "$env_path/bin/activate"
+            echo -e "${GREEN}${ICON_SUCCESS} Environment \"$env_name\" activated${RESET}"
+        else
+            # Script is being executed, show command to run
+            echo -e "${GREEN}${ICON_SUCCESS} Run this command to activate:${RESET}"
+            echo -e "${YELLOW}source \"$env_path/bin/activate\"${RESET}"
+        fi
+    else
+        echo -e "${YELLOW}${ICON_CREATE} Creating \"$env_name\"...${RESET}"
+        if [ -n "$python_cmd" ]; then
+            echo -e "${MAGENTA}Using Python: $python_cmd${RESET}"
+            "$python_cmd" -m venv "$env_path"
+        else
+            python3 -m venv "$env_path"
+        fi
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}${ICON_SUCCESS} Virtual environment created successfully${RESET}"
+            if [[ "${BASH_SOURCE[0]}" != "${0}" ]] || [[ -n "$ZSH_VERSION" ]]; then
+                # Script is being sourced, can activate directly
+                source "$env_path/bin/activate"
+                echo -e "${GREEN}${ICON_SUCCESS} Environment \"$env_name\" activated${RESET}"
+            else
+                # Script is being executed, show command to run
+                echo -e "${GREEN}${ICON_SUCCESS} Run this command to activate:${RESET}"
+                echo -e "${YELLOW}source \"$env_path/bin/activate\"${RESET}"
+            fi
+        else
+            echo -e "${RED}${ICON_ERROR} Failed to create virtual environment${RESET}"
+            return 1
+        fi
+    fi
+}
+
+deactivate_env() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "${YELLOW}${ICON_DEACTIVATE} Deactivating current environment...${RESET}"
+        deactivate
+        echo -e "${GREEN}${ICON_SUCCESS} Environment deactivated${RESET}"
+    else
+        echo -e "${YELLOW}${ICON_ERROR} No active virtual environment${RESET}"
+    fi
+}
+
+remove_env() {
+    local env_name="$2"
+    local env_path="$VENV_DIR/${env_name}-env"
+    
+    if [ -z "$env_name" ]; then
+        echo -e "${RED}${ICON_ERROR} Please specify environment name to remove${RESET}"
+        usage
+        return 1
+    fi
+    
+    echo -e "${RED}${ICON_REMOVE} Removing \"$env_name\"...${RESET}"
+    
+    if [ -d "$env_path" ]; then
+        # Deactivate if it's the current environment
+        if [ "$VIRTUAL_ENV" = "$env_path" ]; then
+            echo -e "${YELLOW}${ICON_DEACTIVATE} Deactivating \"$env_name\"...${RESET}"
+            deactivate
+        fi
+        
+        rm -rf "$env_path"
+        echo -e "${GREEN}${ICON_SUCCESS} Environment \"$env_name\" removed successfully${RESET}"
+    else
+        echo -e "${YELLOW}${ICON_ERROR} Environment \"$env_name\" not found${RESET}"
+    fi
+}
+
+list_envs() {
+    echo -e "${CYAN}${ICON_LIST} Available virtual environments:${RESET}"
+    echo
+    
+    if [ ! -d "$VENV_DIR" ]; then
+        echo -e "${YELLOW}${ICON_ERROR} VENV directory not found${RESET}"
+        return 1
+    fi
+    
+    local count=0
+    for env_dir in "$VENV_DIR"/*-env; do
+        if [ -d "$env_dir" ]; then
+            local env_name=$(basename "$env_dir" | sed 's/-env$//')
+            local status=""
+            
+            if [ "$VIRTUAL_ENV" = "$env_dir" ]; then
+                status="${GREEN}(active)${RESET}"
+            fi
+            
+            echo -e "  ${BLUE}•${RESET} ${WHITE}$env_name${RESET} $status"
+            ((count++))
+        fi
+    done
+    
+    if [ $count -eq 0 ]; then
+        echo -e "${YELLOW}${ICON_ERROR} No virtual environments found${RESET}"
+    else
+        echo
+        echo -e "${CYAN}Total: $count environment(s)${RESET}"
+    fi
+}
+
+go_to_base() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "${CYAN}${ICON_SUCCESS} Going to virtual environment base directory...${RESET}"
+        cd "$VIRTUAL_ENV" || {
+            echo -e "${RED}${ICON_ERROR} Failed to change directory${RESET}"
+            return 1
+        }
+    else
+        echo -e "${YELLOW}${ICON_ERROR} No active virtual environment${RESET}"
+    fi
+}
+
+install_venv_dir() {
+    create_venv_dir
+    echo -e "${GREEN}${ICON_SUCCESS} VENV directory ready${RESET}"
+}
+
+# Main logic - only run if not sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]] && [[ -z "$ZSH_VERSION" ]]; then
+    # Script is being executed directly
+    case "$1" in
+        "")
+            usage
+            ;;
+        "uninstall"|"remove")
+            remove_env "$@"
+            ;;
+        "d"|"de"|"deactive"|"deactivate")
+            deactivate_env
+            ;;
+        "l"|"-l"|"list")
+            list_envs
+            ;;
+        "install"|"-i"|"i")
+            install_venv_dir
+            ;;
+        "base")
+            go_to_base
+            ;;
+        *)
+            # Remove quotes if present
+            PY=$(echo "$PY" | sed 's/"//g')
+            activate_or_create "$NAME" "$PY"
+            ;;
+    esac
+
+    # Cleanup
+    export PATH="$PATH_ORI"
+    cd "$LAST_DIR" || exit 1
+else
+    # Script is being sourced, create function
+    venv() {
+        local NAME="$1"
+        local PY="$2"
+        local PATH_ORI="$PATH"
+        local LAST_DIR="$(pwd)"
+        
+        case "$1" in
+            "")
+                usage
+                ;;
+            "uninstall"|"remove")
+                remove_env "$@"
+                ;;
+            "d"|"de"|"deactive"|"deactivate")
+                deactivate_env
+                ;;
+            "l"|"-l"|"list")
+                list_envs
+                ;;
+            "install"|"-i"|"i")
+                install_venv_dir
+                ;;
+            "base")
+                go_to_base
+                ;;
+            *)
+                # Remove quotes if present
+                PY=$(echo "$PY" | sed 's/"//g')
+                activate_or_create "$NAME" "$PY"
+                ;;
+        esac
+        
+        # Cleanup (but don't exit)
+        export PATH="$PATH_ORI"
+        cd "$LAST_DIR" 2>/dev/null || true
+    }
+    
+    echo -e "${GREEN}${ICON_SUCCESS} venv function loaded! Use: ${YELLOW}venv myproject${RESET}"
+fi
